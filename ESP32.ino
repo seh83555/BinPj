@@ -128,7 +128,7 @@ void loop() {
 
 }
 
-// Get in put and move servo
+// Get input and move servo
 void moveServo(int number) {
 
   Servo* s = nullptr;
