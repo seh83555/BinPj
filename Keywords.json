@@ -1,0 +1,29 @@
+{
+  "Red": [
+    "HAZARDOUS_WASTE_LIST",
+    "battery"
+  ],
+    "Yellow": [
+    "RECYCLABLE_MATERIALS_LIST",
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic"
+  ],
+  "Green": [
+    "FOOD_WASTE_LIST",
+    "biological"
+  ],
+  "Blue": [
+    "GENERAL_WASTE_LIST",
+    "clothes",
+    "foam",
+    "foam_dirty",
+    "shoes",
+    "straws",
+    "trash",
+    "trash_bag",
+    "unrecyclable_plastic"
+  ]
+}
