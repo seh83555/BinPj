@@ -22,6 +22,13 @@ from SqlDB import init_db, update_user_points
 from ultralytics import YOLO
 from PIL import Image
 
+# Initialize database
+init_db()
+
+# Variebles
+RichMenuUserAskForGuide = "HOW TO USE"
+RichMenuUserAskForBonusPoints = "BonusPoints"
+
 # Load trained model
 model = YOLO("trainedModel.pt")
 
@@ -33,6 +40,13 @@ if not os.path.exists(LowConfidenceImg_folder):
 HightConfidenceImg_folder = "Hight_Confidence_Images"
 if not os.path.exists(HightConfidenceImg_folder):
     os.makedirs(HightConfidenceImg_folder)
+
+# Import Settings.json
+try:
+    with open('Settings.json', 'r', encoding='utf-8') as settings_file:
+        Settings = json.load(settings_file)
+except Exception as e:
+    print(f"Error loading Settings.json: {e}")
 
 # Image classification function
 def classify_Image(ImageBytes):
@@ -67,80 +81,60 @@ def classify_Image(ImageBytes):
         print(f"Error during classification: {e}")
         return None
 
-# Bin Mapping
-try:
-    with open('BinMapping.json', 'r', encoding='utf-8') as binmapping_file:
-        BinMapping = json.load(binmapping_file)
-except Exception as e:
-    print(f"Error loading BinMapping.json: {e}")
-
-# Reply Message Mapping
-try:
-    with open('Replymsg.json', 'r', encoding='utf-8') as replymsg_file:
-        Replymsg = json.load(replymsg_file)
-except Exception as e:
-    print(f"Error loading Replymsg.json: {e}")
-
-# Keywords Mapping
-try:
-    with open('Keywords.json', 'r', encoding='utf-8') as Keywords_file:
-
-        Keywords = json.load(Keywords_file)
-
-except Exception as e:      
-    print(f"Error loading Keywords.json: {e}")
-
 # Color to number bin mapping function
 def find_bin(Text: str):
     highest_score = 0
     phrases_match = None
-    bin_color = None
+    bin_type = None
 
-    for key, phrases in Keywords.items():
+    for key, phrases in Settings.get("Categories").items():
         match, score = process.extractOne(Text, phrases, scorer=fuzz.token_sort_ratio)
         if score > highest_score:
             highest_score = score
             phrases_match = match
-            bin_color = key
+            bin_type = key
     
     if highest_score >= 80:
-        return bin_color, phrases_match, highest_score
+        return bin_type, phrases_match, highest_score
     else:
         return None, None, None
 
 # Rich menu response
 def RichMenuResponse(Text: str):
-    if Text == "วิธีใช้":
-        return [
-            ImageSendMessage(
-            original_content_url="https://raw.githubusercontent.com/seh83555/BinPj/refs/heads/main/PreviewPics/Guide_1.png",
-            preview_image_url="https://raw.githubusercontent.com/seh83555/BinPj/refs/heads/main/PreviewPics/Guide_1.png"
-        ),
-            ImageSendMessage(
-            original_content_url="https://raw.githubusercontent.com/seh83555/BinPj/refs/heads/main/PreviewPics/Guide_2.png",
-            preview_image_url="https://raw.githubusercontent.com/seh83555/BinPj/refs/heads/main/PreviewPics/Guide_2.png"
-        )]
-    elif Text == "แลกของรางวัล":
-        return ImageSendMessage(
-            original_content_url="https://raw.githubusercontent.com/seh83555/BinPj/refs/heads/main/PreviewPics/Bonus.png",
-            preview_image_url="https://raw.githubusercontent.com/seh83555/BinPj/refs/heads/main/PreviewPics/Bonus.png"
-        )
+
+    messages = []
+
+    if Text == RichMenuUserAskForGuide:
+
+        GuideImgURL = Settings.get("RichmenuResponse", None).get("GuideImgURL", None)
+        if not GuideImgURL:
+            return None
+        
+        for content in GuideImgURL:
+            messages.append(ImageSendMessage(
+                original_content_url = content.get("Original_Content"),
+                preview_image_url = content.get("Preview_Content")
+            ))
+        return messages
+    
+    elif Text == RichMenuUserAskForBonusPoints:
+
+        BonusImgURL = Settings.get("RichmenuResponse", None).get("BonusImgURL", None)
+        if not BonusImgURL:
+            return None
+        
+        for content in BonusImgURL:
+            messages.append(ImageSendMessage(
+                original_content_url = content.get("Original_Content"),
+                preview_image_url = content.get("Preview_Content")
+            ))
+        return messages
     else:
         return None
 
-# Initialize database
-init_db()
-
-# Initialize Line Bot API and Token
-try:
-    with open('LINETOKEN.json', 'r') as token_file:
-        tokens = json.load(token_file)
-
-        LINE_CHANNEL_ACCESS_TOKEN = tokens.get("LINE_CHANNEL_ACCESS_TOKEN")
-        LINE_CHANNEL_SECRET = tokens.get("LINE_CHANNEL_SECRET")
-
-except Exception as e:
-    print(f"Error loading LINETOKEN.json: {e}")
+# Define LineToken
+LINE_CHANNEL_ACCESS_TOKEN = Settings.get("LineToken", None).get("LINE_CHANNEL_ACCESS_TOKEN", None)
+LINE_CHANNEL_SECRET = Settings.get("LineToken", None).get("LINE_CHANNEL_SECRET", None)
 
 LineBotApi = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 Handler = WebhookHandler(LINE_CHANNEL_SECRET)
@@ -197,7 +191,7 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
 # Follow event handler (when user adds the bot as a friend)
 @Handler.add(FollowEvent)
 def FollowHandler(Event):
-    LineBotApi.reply_message(Event.reply_token,TextSendMessage(Replymsg.get("WelcomeMsg")))
+    LineBotApi.reply_message(Event.reply_token,TextSendMessage(Settings.get("ReplyMsg", None).get("WelcomeMsg", None)))
 
 # Handle text messages
 @Handler.add(MessageEvent, message=TextMessage)
@@ -212,11 +206,11 @@ def TextHandler(Event):
         LineBotApi.reply_message(Event.reply_token, RichMenuResponseessage)
         return
 
-    bin_color, phrases_match, highest_score = find_bin(userText)
+    bin_type, phrases_match, highest_score = find_bin(userText)
     
     if highest_score is not None and highest_score >= 80:
 
-        BinNumber = BinMapping.get(bin_color, None)
+        BinNumber = Settings.get("BinMapping", None).get(bin_type, None)
         if BinNumber is not None and BinNumber >= 1 and BinNumber <= 4:
 
             loop = asyncio.get_event_loop()
@@ -224,9 +218,9 @@ def TextHandler(Event):
             TotalPoints, TodayPoints = update_user_points(UserId, 10)
 
         # Reply to user
-        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Replymsg.get(str(BinNumber)) + f"\n\nคุณได้รับแต้ม {TodayPoints}/50 วันนี้\nแต้มสะสมทั้งหมด : {TotalPoints}"))
+        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Settings.get("ReplyMsg", None).get(str(BinNumber)) + f"\n\nคุณได้รับแต้ม {TodayPoints}/50 วันนี้\nแต้มสะสมทั้งหมด : {TotalPoints}"))
     else:
-        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Replymsg.get("ErrorMsg")))
+        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Settings.get("ReplyMsg", None).get("ErrorMsg")))
 
 # Handle image messages
 @Handler.add(MessageEvent, message=ImageMessage)
@@ -241,22 +235,22 @@ def ImageHandler(Event):
     objectName = classify_Image(ImageBytes)
     if objectName:
 
-        bin_color, phrases_match, highest_score = find_bin(objectName)
+        bin_type, phrases_match, highest_score = find_bin(objectName)
 
         if highest_score is None:
-            LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Replymsg.get("ErrorMsg")))
+            LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Settings.get("ReplyMsg", None).get("ErrorMsg")))
             return
         
-        BinNumber = BinMapping.get(bin_color, None)
+        BinNumber = Settings.get("BinMapping", None).get(bin_type, None)
         if BinNumber is not None and BinNumber >= 1 and BinNumber <= 4:
             loop = asyncio.get_event_loop()
             run_coroutine_threadsafe(Device.send_command(str(BinNumber)), loop)
             TotalPoints, TodayPoints = update_user_points(UserId, 10)
 
         # Reply to user
-        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Replymsg.get(str(BinNumber)) + f"\n\nคุณได้รับแต้ม {TodayPoints}/50 วันนี้\nแต้มสะสมทั้งหมด : {TotalPoints}"))
+        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Settings.get("ReplyMsg").get(str(BinNumber)) + f"\n\nคุณได้รับแต้ม {TodayPoints}/50 วันนี้\nแต้มสะสมทั้งหมด : {TotalPoints}"))
     else:
-        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Replymsg.get("ErrorMsg")))
+        LineBotApi.reply_message(Event.reply_token,TextSendMessage(text=Settings.get("ReplyMsg").get("ErrorMsg")))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
