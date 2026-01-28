@@ -1,0 +1,57 @@
+{
+    "ReplyMsg": {
+        "WelcomeMsg": "ํYOUR_WELCOME_MESSAGE_HERE",
+        "ErrorMsg": "YOUR_ERROR_MESSAGE_HERE",
+        "1": "RESPONSE_MESSAGE_WHEN_HAZARDOUS_BIN_HAS_OPENED",
+        "2": "RESPONSE_MESSAGE_WHEN_RECYCLABLE_BIN_HAS_OPENED",
+        "3": "RESPONSE_MESSAGE_WHEN_FOOD_WASTE_BIN_HAS_OPENED",
+        "4": "RESPONSE_MESSAGE_WHEN_GENERAL_WASTE_BIN_HAS_OPENED"
+    },
+
+    "LineToken": {
+            "LINE_CHANNEL_ACCESS_TOKEN": "YOUR_LINE_CHANNEL_ACCESS_TOKEN",
+            "LINE_CHANNEL_SECRET": "YOUR_LINE_CHANNEL_SECRET"
+    },
+
+    "BinMapping": {
+        "HAZARDOUS_WASTE_LIST": 1,
+        "RECYCLABLE_MATERIALS_LIST": 2,
+        "FOOD_WASTE_LIST": 3,
+        "GENERAL_WASTE_LIST": 4
+    },
+    
+    "RichmenuResponse": {
+        "GuideImgURL": [
+            {
+                "Original_Content": "YOUR_FIRST_URL_IMAGE",
+                "Preview_Content": "YOUR_FIRST_URL_IMAGE"
+            },
+            {
+                "Original_Content": "YOUR_SECOND_URL_IMAGE",
+                "Preview_Content": "YOUR_SECOND_URL_IMAGE"
+            }
+        ],
+
+        "BonusImgURL": [
+            {
+                "Original_Content": "YOUR_FIRST_URL_IMAGE",
+                "Preview_Content": "YOUR_FIRST_URL_IMAGE"
+            }
+        ]
+    },
+
+    "Categories": {
+        "HAZARDOUS_WASTE_LIST": [
+            "BATTERY"
+        ],
+        "RECYCLABLE_MATERIALS_LIST": [
+            "PAPER"
+        ],
+        "FOOD_WASTE_LIST": [
+            "FOOD"
+        ],
+        "GENERAL_WASTE_LIST": [
+            "FOAM"
+        ]
+    }
+}

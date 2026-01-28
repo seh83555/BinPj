@@ -3,4 +3,4 @@ line_bot_sdk==3.22.0
 Pillow==12.1.0
 thefuzz==0.22.1
 ultralytics==8.3.247
-uvicorn==0.40.0
+uvicorn[standard]==0.40.0
